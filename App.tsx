@@ -1,117 +1,60 @@
+
 import React, { useState, useEffect } from 'react';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import type { Attendee } from './types.ts';
-import Header from './components/Header.tsx';
-import AddAttendeeForm from './components/AddAttendeeForm.tsx';
-import AttendeeTable from './components/AttendeeTable.tsx';
-import { DownloadIcon } from './components/icons.tsx';
+import { Training } from './types';
+import TrainingForm from './components/TrainingForm';
+import TrainingTable from './components/TrainingTable';
 
 const App: React.FC = () => {
-  const [attendees, setAttendees] = useState<Attendee[]>([]);
+  const [trainings, setTrainings] = useState<Training[]>(() => {
+    try {
+      const savedTrainings = localStorage.getItem('trainings');
+      return savedTrainings ? JSON.parse(savedTrainings) : [];
+    } catch (error) {
+      console.error("Could not parse trainings from localStorage", error);
+      return [];
+    }
+  });
 
   useEffect(() => {
-    try {
-      const storedAttendees = localStorage.getItem('attendees');
-      if (storedAttendees) {
-        setAttendees(JSON.parse(storedAttendees));
-      }
-    } catch (error) {
-      console.error("Failed to load attendees from localStorage", error);
-    }
-  }, []);
+    localStorage.setItem('trainings', JSON.stringify(trainings));
+  }, [trainings]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('attendees', JSON.stringify(attendees));
-    } catch (error) {
-      console.error("Failed to save attendees to localStorage", error);
-    }
-  }, [attendees]);
-
-  const handleAddAttendee = (newAttendee: Attendee) => {
-    setAttendees(prevAttendees => [...prevAttendees, newAttendee]);
+  const addTraining = (training: Omit<Training, 'id'>) => {
+    const newTraining: Training = {
+      ...training,
+      id: crypto.randomUUID(),
+    };
+    setTrainings(prevTrainings => [...prevTrainings, newTraining]);
   };
 
-  const handleDownloadPdf = () => {
-    if (attendees.length === 0) return;
-    
-    const doc = new jsPDF();
-    
-    doc.setFontSize(18);
-    doc.text("Registro de Asistencia a Capacitación", 14, 22);
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, 14, 30);
-
-    const tableColumn = ["Nombre y Apellido", "Número de ID", "Fecha de Registro", "Firma"];
-    const tableRows: any[][] = [];
-
-    attendees.forEach(attendee => {
-      const attendeeData = [
-        attendee.name,
-        attendee.idNumber,
-        new Date(attendee.timestamp).toLocaleString('es-ES'),
-        '', // Placeholder for image
-      ];
-      tableRows.push(attendeeData);
-    });
-
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 35,
-      didDrawCell: (data: any) => {
-        if (data.section === 'body' && data.column.index === 3) {
-           const attendee = attendees[data.row.index];
-           if (attendee && attendee.signature) {
-             const img = new Image();
-             img.src = attendee.signature;
-             const cellHeight = data.cell.height - 4; // padding
-             const aspectRatio = img.width / img.height;
-             const imgWidth = cellHeight * aspectRatio;
-             const imgHeight = cellHeight;
-             const x = data.cell.x + (data.cell.width - imgWidth) / 2;
-             const y = data.cell.y + 2;
-             doc.addImage(img, 'PNG', x, y, imgWidth, imgHeight);
-           }
-        }
-      },
-      rowPageBreak: 'avoid',
-      styles: { valign: 'middle' },
-      columnStyles: { 3: { cellWidth: 40 } },
-    });
-
-    doc.save("registro_asistencia.pdf");
+  const deleteTraining = (id: string) => {
+    setTrainings(prevTrainings => prevTrainings.filter(t => t.id !== id));
   };
 
   return (
-    <>
-      <Header />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-        <AddAttendeeForm onAdd={handleAddAttendee} />
-        
-        <div className="bg-white p-6 rounded-lg shadow-md">
-           <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">Lista de Asistentes</h2>
-              <button
-                onClick={handleDownloadPdf}
-                disabled={attendees.length === 0}
-                className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors ${
-                  attendees.length === 0
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700'
-                }`}
-              >
-                <DownloadIcon className="h-5 w-5 mr-2" />
-                Descargar PDF
-              </button>
-           </div>
-          <AttendeeTable attendees={attendees} />
-        </div>
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 flex flex-col items-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-6xl mx-auto">
+        <header className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-primary">Registro de Capacitaciones</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Agregue y gestione las capacitaciones de su equipo.</p>
+        </header>
 
-      </main>
-    </>
+        <main className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6">
+              <h2 className="text-2xl font-semibold mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">Nueva Capacitación</h2>
+              <TrainingForm onAddTraining={addTraining} />
+            </div>
+          </div>
+          <div className="lg:col-span-2">
+             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 h-full">
+                <h2 className="text-2xl font-semibold mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">Registros Actuales</h2>
+                <TrainingTable trainings={trainings} onDeleteTraining={deleteTraining} />
+             </div>
+          </div>
+        </main>
+      </div>
+    </div>
   );
 };
 

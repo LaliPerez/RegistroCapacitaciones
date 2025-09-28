@@ -1,14 +1,9 @@
 
-export interface Attendee {
+export interface Training {
   id: string;
+  type: string;
   name: string;
-  idNumber: string;
-  signature: string; // base64 data URL
-  timestamp: string; // ISO string
-}
-
-export interface SignatureCanvasRef {
-  clear: () => void;
-  getSignature: () => string; // returns base64 data URL
-  isEmpty: () => boolean;
+  date: string;
+  hours: number;
+  attendee: string;
 }

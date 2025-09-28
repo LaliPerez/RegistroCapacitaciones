@@ -1,5 +1,5 @@
 
 {
-  "name": "Registro de Asistencia a Capacitación",
-  "description": "Una aplicación para registrar la asistencia a capacitaciones, capturando nombre, número de ID y firma digital. Funciona como una hoja de cálculo para guardar la información de los asistentes."
+  "name": "Registro de Capacitaciones",
+  "description": "Una aplicación para registrar y gestionar capacitaciones. Permite agregar, ver y eliminar registros de capacitación en una tabla interactiva."
 }
