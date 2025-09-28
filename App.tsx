@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import type { Attendee } from './types.ts';
 import Header from './components/Header.tsx';
 import AddAttendeeForm from './components/AddAttendeeForm.tsx';
 import AttendeeTable from './components/AttendeeTable.tsx';
 import { DownloadIcon } from './components/icons.tsx';
-
-declare global {
-    interface Window {
-        jspdf: any;
-    }
-}
 
 const App: React.FC = () => {
   const [attendees, setAttendees] = useState<Attendee[]>([]);
@@ -39,7 +35,7 @@ const App: React.FC = () => {
 
   const handleDownloadPdf = () => {
     if (attendees.length === 0) return;
-    const { jsPDF } = window.jspdf;
+    
     const doc = new jsPDF();
     
     doc.setFontSize(18);
@@ -61,7 +57,7 @@ const App: React.FC = () => {
       tableRows.push(attendeeData);
     });
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 35,
